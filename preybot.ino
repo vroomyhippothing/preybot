@@ -1,11 +1,11 @@
-#include <Servo.h> //for ESC signals
-#include <FastLED.h> //for LEDs
+#include <Servo.h> // for ESC signals
+#include <FastLED.h> // for LEDs
 /////CONSTANTS
-#define noSigOffTime 100000 //if there is no signal on a channel for this many microseconds, disable
-#define LEDPeriod 20 //milliseconds between LED refreshes
-#define yPercent 80
-#define xPercent 55
-#define sPercent 45
+#define noSigOffTime 100000 // if there is no signal on a channel for this many microseconds, disable
+#define LEDPeriod 20 // milliseconds between LED refreshes
+#define yPercent 80 // what fraction of full power can be used for moving forwards (leaving power to move around other axes)
+#define xPercent 55 // what fraction of full power can be used for moving sideways
+#define sPercent 45 // what fraction of full power can be used for spinning
 #define lct 120 // number of leds
 
 /////PINS
@@ -238,6 +238,7 @@ void pciSetup(byte pin) { // enables interrupts somehow, don't know it how works
 
 
 ////////////////////////////////////////////////pattern functions
+//makes moving waves between two colors. larger W=shorter wave period, larger S=faster movement
 void LEDscHSVcHSVwavesWS(CHSV A, CHSV B, int W, int S) {
   CRGB a;
   CRGB b;
@@ -249,6 +250,7 @@ void LEDscHSVcHSVwavesWS(CHSV A, CHSV B, int W, int S) {
     LEDsSetLightRGB(i, map(scaler, 0, 255, 0, a.red) + map(255 - scaler, 0, 255, 0, b.red), map(scaler, 0, 255, 0, a.green) + map(255 - scaler, 0, 255, 0, b.green), map(scaler, 0, 255, 0, a.blue) + map(255 - scaler, 0, 255, 0, b.blue));
   }
 }
+//pulses (period T) a color with hue H and saturation S from value v to V with time period T
 void LEDsPulseHSvVT(int H, int S, int v, int V, int T) {
   unsigned long milli = millis();
   if (milli % T < T / 2) {
@@ -258,6 +260,7 @@ void LEDsPulseHSvVT(int H, int S, int v, int V, int T) {
     LEDsSetAllHSV(H, S, constrain(map(milli % T, T / 2, T, V, v), v, V));
   }
 }
+//makes moving rainbow waves. larger wvs=shorter waves, more repeated waves. larger spd=slower waves
 void LEDsWavesOfRainbowWSV(int wvs, int spd, int v) {
   for (int i = 0; i < lct; i++) {
     LEDsSetLightHSV(i, byte(int(i * wvs / lct + millis() * 10 / spd)), 255, v);

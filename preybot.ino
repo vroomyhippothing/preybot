@@ -1,5 +1,3 @@
-//preybot code v0.1
-
 #include <Servo.h> //for ESC signals
 #include <FastLED.h> //for LEDs
 /////CONSTANTS

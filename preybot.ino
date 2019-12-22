@@ -6,6 +6,7 @@
 #define yPercent 80
 #define xPercent 55
 #define sPercent 45
+#define lct 120 // number of leds
 
 /////PINS
 //RC input pins (must be within D8-D13)
@@ -63,12 +64,18 @@ volatile byte newPulseDataFlag = 255;
 
 unsigned long LEDTimerLastMillis = 0;
 
+CRGB leds[lct];
+
 Servo lf;
 Servo rf;
 Servo lb;
 Servo rb;
 
 void setup() {
+  FastLED.addLeds<DOTSTAR, ledDataPin, ledClockPin, BGR>(leds, lct);
+  LEDsAllOff();
+  FastLED.show();
+
   lf.attach(lfPin);
   rf.attach(rfPin);
   lb.attach(lbPin);
@@ -225,4 +232,59 @@ void pciSetup(byte pin) { // enables interrupts somehow, don't know it how works
   *digitalPinToPCMSK(pin) |= bit (digitalPinToPCMSKbit(pin));  // enable pin
   PCIFR  |= bit (digitalPinToPCICRbit(pin)); // clear any outstanding interrupt
   PCICR  |= bit (digitalPinToPCICRbit(pin)); // enable interrupt for the group
+}
+
+
+////////////////////////////////////////////////pattern functions
+void cHSVcHSVwavesWS(CHSV A, CHSV B, int W, int S) {
+  CRGB a;
+  CRGB b;
+  hsv2rgb_rainbow(A, a);
+  hsv2rgb_rainbow(B, b);
+  unsigned long milli = millis();
+  for (int i = 0; i < lct; i++) {
+    byte scaler = sin8(int(milli / S + (i * W * 255 / lct)));
+    LEDsSetLightRGB(i, map(scaler, 0, 255, 0, a.red) + map(255 - scaler, 0, 255, 0, b.red), map(scaler, 0, 255, 0, a.green) + map(255 - scaler, 0, 255, 0, b.green), map(scaler, 0, 255, 0, a.blue) + map(255 - scaler, 0, 255, 0, b.blue));
+  }
+}
+void pulseHSvVT(int H, int S, int v, int V, int T) {
+  unsigned long milli = millis();
+  if (milli % T < T / 2) {
+    LEDsSetAllHSV(H, S, constrain(map(milli % T, 0, T / 2, v, V), v, V));
+  }
+  if (milli % T >= T / 2) {
+    LEDsSetAllHSV(H, S, constrain(map(milli % T, T / 2, T, V, v), v, V));
+  }
+}
+void wavesOfRainbowWSV(int wvs, int spd, int v) {
+  for (int i = 0; i < lct; i++) {
+    LEDsSetLightHSV(i, byte(int(i * wvs / lct + millis() * 10 / spd)), 255, v);
+  }
+}
+
+
+
+/////////////////////////////////////////light setting functions (lower level)
+void LEDsAllOff() {
+  LEDsSetAllRGB(0, 0, 0);
+}
+void LEDsSetAllHSV(int HUE, int SAT, int VAL) {
+  for (int i = 0; i < lct; i++) {
+    LEDsSetLightHSV(i, HUE, SAT, VAL);
+  }
+}
+void LEDsSetLightHSV(int J, int HUE, int SAT, int VAL) {
+  if (J >= 0 && J < lct) {
+    leds[J] = CHSV(HUE, SAT, VAL);
+  }
+}
+void LEDsSetAllRGB(int RED, int GREEN, int BLUE) {
+  for (int i = 0; i < lct; i++) {
+    LEDsSetLightRGB(i, RED, GREEN, BLUE);
+  }
+}
+void LEDsSetLightRGB(int J, int RED, int GREEN, int BLUE) {
+  if (J >= 0 && J < lct) {
+    leds[J] = CRGB(RED, GREEN, BLUE);
+  }
 }

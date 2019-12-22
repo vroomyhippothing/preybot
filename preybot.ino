@@ -95,26 +95,12 @@ void setup() {
 
 void loop() {
   if (newPulseDataFlag != 255) {
-    if (newPulseDataFlag == xPin) {
-      noInterrupts(); // prevent an interrupt from changing a value while it's being used
-      xTime = xFallTime - xRiseTime;
-      interrupts();
-    }
-    if (newPulseDataFlag == yPin) {
-      noInterrupts();
-      xTime = yFallTime - yRiseTime;
-      interrupts();
-    }
-    if (newPulseDataFlag == zPin) {
-      noInterrupts();
-      zTime = zFallTime - zRiseTime;
-      interrupts();
-    }
-    if (newPulseDataFlag == sPin) {
-      noInterrupts();
-      sTime = sFallTime - sRiseTime;
-      interrupts();
-    }
+    noInterrupts(); // prevent an interrupt from changing a value while it's being used
+    xTime = xFallTime - xRiseTime;
+    xTime = yFallTime - yRiseTime;
+    zTime = zFallTime - zRiseTime;
+    sTime = sFallTime - sRiseTime;
+    interrupts();
 
     x = constrain(map(xTime, 1000, 2000, 0, 200), 0, 200);
     y = constrain(map(yTime, 1000, 2000, 0, 200), 0, 200);

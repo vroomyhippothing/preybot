@@ -166,7 +166,9 @@ void loop() {
       }
     }
   }//end of if enabled
+
   if (millis() - LEDTimerLastMillis > LEDPeriod) { // timer code to periodically run led code
+    LEDsPulseHSvVT(200, 200, 30, 150, 2000);
     FastLED.show();
     LEDTimerLastMillis = millis();
   }
@@ -236,7 +238,7 @@ void pciSetup(byte pin) { // enables interrupts somehow, don't know it how works
 
 
 ////////////////////////////////////////////////pattern functions
-void cHSVcHSVwavesWS(CHSV A, CHSV B, int W, int S) {
+void LEDscHSVcHSVwavesWS(CHSV A, CHSV B, int W, int S) {
   CRGB a;
   CRGB b;
   hsv2rgb_rainbow(A, a);
@@ -247,7 +249,7 @@ void cHSVcHSVwavesWS(CHSV A, CHSV B, int W, int S) {
     LEDsSetLightRGB(i, map(scaler, 0, 255, 0, a.red) + map(255 - scaler, 0, 255, 0, b.red), map(scaler, 0, 255, 0, a.green) + map(255 - scaler, 0, 255, 0, b.green), map(scaler, 0, 255, 0, a.blue) + map(255 - scaler, 0, 255, 0, b.blue));
   }
 }
-void pulseHSvVT(int H, int S, int v, int V, int T) {
+void LEDsPulseHSvVT(int H, int S, int v, int V, int T) {
   unsigned long milli = millis();
   if (milli % T < T / 2) {
     LEDsSetAllHSV(H, S, constrain(map(milli % T, 0, T / 2, v, V), v, V));
@@ -256,7 +258,7 @@ void pulseHSvVT(int H, int S, int v, int V, int T) {
     LEDsSetAllHSV(H, S, constrain(map(milli % T, T / 2, T, V, v), v, V));
   }
 }
-void wavesOfRainbowWSV(int wvs, int spd, int v) {
+void LEDsWavesOfRainbowWSV(int wvs, int spd, int v) {
   for (int i = 0; i < lct; i++) {
     LEDsSetLightHSV(i, byte(int(i * wvs / lct + millis() * 10 / spd)), 255, v);
   }

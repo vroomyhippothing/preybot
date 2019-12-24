@@ -83,7 +83,7 @@ void loop() {
   if (newPulseDataFlag != 255) {
     noInterrupts(); // prevent an interrupt from changing a value while it's being used
     xTime = xFallTime - xRiseTime;
-    xTime = yFallTime - yRiseTime;
+    yTime = yFallTime - yRiseTime;
     zTime = zFallTime - zRiseTime;
     interrupts();
 

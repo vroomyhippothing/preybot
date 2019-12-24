@@ -5,7 +5,7 @@
 #define LEDPeriod 20 // milliseconds between LED refreshes
 #define yPercent 80 // what fraction of full power can be used for moving forwards (leaving power to move around other axes)
 #define xPercent 55 // what fraction of full power can be used for moving sideways
-#define sPercent 45 // what fraction of full power can be used for spinning
+#define zPercent 45 // what fraction of full power can be used for spinning
 #define lct 120 // number of leds
 
 /////PINS
@@ -13,7 +13,6 @@
 #define xPin 9 //left-right channel
 #define yPin 8 //forwards-backwards channel
 #define zPin 10 //spin channel
-#define sPin 11 //switch channel
 
 //ESC pins
 #define lfPin 2 // left front motor
@@ -30,35 +29,23 @@ uint8_t x = 100;
 uint8_t y = 100;
 uint8_t z = 100;
 
-uint8_t s = 0; // value for switches
-
-// motor disabling vars
-bool lfOff = false;
-bool rfOff = false;
-bool lbOff = false;
-bool rbOff = false;
-
 // variables to be used in the interrupt routine to record pulse times
 volatile uint32_t xRiseTime = 0;
 volatile uint32_t yRiseTime = 0;
 volatile uint32_t zRiseTime = 0;
-volatile uint32_t sRiseTime = 0;
 
 volatile uint32_t xFallTime = 0;
 volatile uint32_t yFallTime = 0;
 volatile uint32_t zFallTime = 0;
-volatile uint32_t sFallTime = 0;
 
 volatile bool xLast = false;
 volatile bool yLast = false;
 volatile bool zLast = false;
-volatile bool sLast = false;
 
 // pulse lengths (microseconds)
 uint32_t xTime = 0;
 uint32_t yTime = 0;
 uint32_t zTime = 0;
-uint32_t sTime = 0;
 
 volatile byte newPulseDataFlag = 255;
 
@@ -90,7 +77,6 @@ void setup() {
   pciSetup(yPin);
   pciSetup(xPin);
   pciSetup(zPin);
-  pciSetup(sPin);
 }
 
 void loop() {
@@ -99,23 +85,14 @@ void loop() {
     xTime = xFallTime - xRiseTime;
     xTime = yFallTime - yRiseTime;
     zTime = zFallTime - zRiseTime;
-    sTime = sFallTime - sRiseTime;
     interrupts();
 
     x = constrain(map(xTime, 1000, 2000, 0, 200), 0, 200);
     y = constrain(map(yTime, 1000, 2000, 0, 200), 0, 200);
     z = constrain(map(zTime, 1000, 2000, 0, 200), 0, 200);
-
-    s = (constrain(sTime, 1000, 2000) - 1000) / 63; // convert sTime to 0-15
-
-    //extract four bits (2^4=16)
-    lfOff = s & B00000001 == 1;
-    rfOff = (s & B00000010) >> 1 == 1;
-    lbOff = (s & B00000100) >> 2 == 1;
-    rbOff = (s & B00001000) >> 3 == 1;
   }
 
-  if (micros() - xFallTime > noSigOffTime or micros() - yFallTime > noSigOffTime or micros() - zFallTime > noSigOffTime or micros() - sFallTime > noSigOffTime) {//signal loss timeout disable
+  if (micros() - xFallTime > noSigOffTime or micros() - yFallTime > noSigOffTime or micros() - zFallTime > noSigOffTime) {//signal loss timeout disable
     lf.writeMicroseconds(1500); // stop
     rf.writeMicroseconds(1500);
     lb.writeMicroseconds(1500);
@@ -123,33 +100,17 @@ void loop() {
     delay(1);
   } else { // enabled
     if (newPulseDataFlag != 255) { // there's been a change to the controls
-      if (!lfOff) { // left front wheel on
-        //forward:+ right:- CCW:-
-        lf.writeMicroseconds(constrain(1500 + (y - 100) * 5 * yPercent / 100 - (x - 100) * 5 * xPercent / 100 - (s - 100) * 5 * sPercent / 100, 1000, 2000));
-      } else {
-        lf.writeMicroseconds(1500); //turn off motor
-      }
+      //forward:+ right:- CCW:-
+      lf.writeMicroseconds(constrain(1500 + (y - 100) * 5 * yPercent / 100 - (x - 100) * 5 * xPercent / 100 - (z - 100) * 5 * zPercent / 100, 1000, 2000));
 
-      if (!rfOff) { // right front wheel on
-        //forward:+ right:+ CCW:+
-        rf.writeMicroseconds(constrain(1500 + (y - 100) * 5 * yPercent / 100 + (x - 100) * 5 * xPercent / 100 + (s - 100) * 5 * sPercent / 100, 1000, 2000));
-      } else {
-        rf.writeMicroseconds(1500); //turn off motor
-      }
+      //forward:+ right:+ CCW:+
+      rf.writeMicroseconds(constrain(1500 + (y - 100) * 5 * yPercent / 100 + (x - 100) * 5 * xPercent / 100 + (z - 100) * 5 * zPercent / 100, 1000, 2000));
 
-      if (!lbOff) { // left back wheel on
-        //forward:+ right:+ CCW:-
-        lb.writeMicroseconds(constrain(1500 + (y - 100) * 5 * yPercent / 100 + (x - 100) * 5 * xPercent / 100 - (s - 100) * 5 * sPercent / 100, 1000, 2000));
-      } else {
-        lb.writeMicroseconds(1500); //turn off motor
-      }
+      //forward:+ right:+ CCW:-
+      lb.writeMicroseconds(constrain(1500 + (y - 100) * 5 * yPercent / 100 + (x - 100) * 5 * xPercent / 100 - (z - 100) * 5 * zPercent / 100, 1000, 2000));
 
-      if (!rbOff) { // right back wheel on
-        //forward:+ right:- CCW:+
-        rb.writeMicroseconds(constrain(1500 + (y - 100) * 5 * yPercent / 100 - (x - 100) * 5 * xPercent / 100 + (s - 100) * 5 * sPercent / 100, 1000, 2000));
-      } else {
-        rb.writeMicroseconds(1500); //turn off motor
-      }
+      //forward:+ right:- CCW:+
+      rb.writeMicroseconds(constrain(1500 + (y - 100) * 5 * yPercent / 100 - (x - 100) * 5 * xPercent / 100 + (z - 100) * 5 * zPercent / 100, 1000, 2000));
     }
   }//end of if enabled
 
@@ -199,19 +160,6 @@ ISR (PCINT0_vect) { // Pin Change Interrupt Request 0 (pins D8 to D13)
     if (zLast == LOW) { // rising
       zRiseTime = micros();
       zLast = HIGH;
-    }
-  }
-
-  if (digitalRead(sPin) == LOW) {
-    if (sLast == HIGH) { // falling
-      sFallTime = micros(); // record current microseconds since program start
-      sLast = LOW; //save for next time
-      newPulseDataFlag = sPin; // set flag that there was just a change on this pin.
-    }
-  } else { // sPin==HIGH
-    if (sLast == LOW) { // rising
-      sRiseTime = micros();
-      sLast = HIGH;
     }
   }
 }

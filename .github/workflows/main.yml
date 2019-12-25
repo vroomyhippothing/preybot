@@ -1,12 +1,12 @@
-name: Build examples
+name: verify
 on: push
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - name: Build all example sketches
+    - name: check compiling sketch
       uses: Legion2/arduino-builder-action@v2.0.0
       with:
-        board: "arduino:avr:leonardo"
-        sketch: ./preybot
+        board: "arduino:avr:uno"
+        sketch: ./preybot.ino

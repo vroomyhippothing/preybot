@@ -4,8 +4,8 @@
 #define noSigOffTime 100000 // if there is no signal on a channel for this many microseconds, disable
 #define LEDPeriod 20 // milliseconds between LED refreshes
 #define yPercent 80 // what fraction of full power can be used for moving forwards (leaving power to move around other axes)
-#define xPercent 55 // what fraction of full power can be used for moving sideways
-#define zPercent 45 // what fraction of full power can be used for spinning
+#define xPercent 65 // what fraction of full power can be used for moving sideways
+#define zPercent 55 // what fraction of full power can be used for spinning
 #define lct 120 // number of leds
 
 /////PINS

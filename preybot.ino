@@ -1,5 +1,5 @@
 #include <Servo.h> // for ESC signals
-#include <FastLED.h> // for LEDs
+// #include <FastLED.h> // for LEDs
 /////CONSTANTS
 #define noSigOffTime 100000 // if there is no signal on a channel for this many microseconds, disable
 #define LEDPeriod 20 // milliseconds between LED refreshes
@@ -10,9 +10,9 @@
 
 /////PINS
 //RC input pins (must be within D8-D13)
-#define xPin 9 //left-right channel
+#define xPin 10 //left-right channel
 #define yPin 8 //forwards-backwards channel
-#define zPin 10 //spin channel
+#define zPin 9 //spin channel
 
 //ESC pins
 #define lfPin 2 // left front motor
@@ -51,7 +51,7 @@ volatile byte newPulseDataFlag = 255;
 
 unsigned long LEDTimerLastMillis = 0;
 
-CRGB leds[lct];
+//CRGB leds[lct];
 
 Servo lf;
 Servo rf;
@@ -59,9 +59,10 @@ Servo lb;
 Servo rb;
 
 void setup() {
-  FastLED.addLeds<DOTSTAR, ledDataPin, ledClockPin, BGR>(leds, lct);
-  LEDsAllOff();
-  FastLED.show();
+  Serial.begin(115200);
+  //  FastLED.addLeds<DOTSTAR, ledDataPin, ledClockPin, BGR>(leds, lct);
+  //  LEDsAllOff();
+  //  FastLED.show();
 
   lf.attach(lfPin);
   rf.attach(rfPin);
@@ -72,6 +73,8 @@ void setup() {
   rf.writeMicroseconds(1500);
   lb.writeMicroseconds(1500);
   rb.writeMicroseconds(1500);
+
+  delayMicroseconds(noSigOffTime);
 
   // setup interrupt pins
   pciSetup(yPin);
@@ -87,9 +90,9 @@ void loop() {
     zTime = zFallTime - zRiseTime;
     interrupts();
 
-    x = constrain(map(xTime, 1000, 2000, 0, 200), 0, 200);
-    y = constrain(map(yTime, 1000, 2000, 0, 200), 0, 200);
-    z = constrain(map(zTime, 1000, 2000, 0, 200), 0, 200);
+    x = constrain(map(xTime, 1100, 1900, 0, 200), 0, 200);
+    y = constrain(map(yTime, 1100, 1900, 0, 200), 0, 200);
+    z = constrain(map(zTime, 1100, 1900, 0, 200), 0, 200);
   }
 
   if (micros() - xFallTime > noSigOffTime or micros() - yFallTime > noSigOffTime or micros() - zFallTime > noSigOffTime) {//signal loss timeout disable
@@ -100,6 +103,12 @@ void loop() {
     delay(1);
   } else { // enabled
     if (newPulseDataFlag != 255) { // there's been a change to the controls
+//      Serial.print(y);
+//      Serial.print(",");
+//      Serial.print(x);
+//      Serial.print(",");
+//      Serial.print(z);
+//      Serial.println(",");
       //forward:+ right:- CCW:-
       lf.writeMicroseconds(constrain(1500 + (y - 100) * 5 * yPercent / 100 - (x - 100) * 5 * xPercent / 100 - (z - 100) * 5 * zPercent / 100, 1000, 2000));
 
@@ -112,13 +121,21 @@ void loop() {
       //forward:+ right:- CCW:+
       rb.writeMicroseconds(constrain(1500 + (y - 100) * 5 * yPercent / 100 - (x - 100) * 5 * xPercent / 100 + (z - 100) * 5 * zPercent / 100, 1000, 2000));
     }
+    //    Serial.print(lf.readMicroseconds());
+    //    Serial.print(",");
+    //    Serial.print(rf.readMicroseconds());
+    //    Serial.print(",");
+    //    Serial.print(lb.readMicroseconds());
+    //    Serial.print(",");
+    //    Serial.print(rb.readMicroseconds());
+    //    Serial.println(",");
   }//end of if enabled
 
-  if (millis() - LEDTimerLastMillis > LEDPeriod) { // timer code to periodically run led code
-    LEDsPulseHSvVT(200, 200, 30, 150, 2000);
-    FastLED.show();
-    LEDTimerLastMillis = millis();
-  }
+  //  if (millis() - LEDTimerLastMillis > LEDPeriod) { // timer code to periodically run led code
+  //    LEDsPulseHSvVT(200, 200, 30, 150, 2000);
+  //    FastLED.show();
+  //    LEDTimerLastMillis = millis();
+  //  }
 }
 
 //this function gets called when any of the RC pins changes state
@@ -171,59 +188,59 @@ void pciSetup(byte pin) { // enables interrupts somehow, don't know it how works
 }
 
 
-////////////////////////////////////////////////pattern functions
-//makes moving waves between two colors. larger W=shorter wave period, larger S=faster movement
-void LEDscHSVcHSVwavesWS(CHSV A, CHSV B, int W, int S) {
-  CRGB a;
-  CRGB b;
-  hsv2rgb_rainbow(A, a);
-  hsv2rgb_rainbow(B, b);
-  unsigned long milli = millis();
-  for (int i = 0; i < lct; i++) {
-    byte scaler = sin8(int(milli / S + (i * W * 255 / lct)));
-    LEDsSetLightRGB(i, map(scaler, 0, 255, 0, a.red) + map(255 - scaler, 0, 255, 0, b.red), map(scaler, 0, 255, 0, a.green) + map(255 - scaler, 0, 255, 0, b.green), map(scaler, 0, 255, 0, a.blue) + map(255 - scaler, 0, 255, 0, b.blue));
-  }
-}
-//pulses (period T) a color with hue H and saturation S from value v to V with time period T
-void LEDsPulseHSvVT(int H, int S, int v, int V, int T) {
-  unsigned long milli = millis();
-  if (milli % T < T / 2) {
-    LEDsSetAllHSV(H, S, constrain(map(milli % T, 0, T / 2, v, V), v, V));
-  }
-  if (milli % T >= T / 2) {
-    LEDsSetAllHSV(H, S, constrain(map(milli % T, T / 2, T, V, v), v, V));
-  }
-}
-//makes moving rainbow waves. larger wvs=shorter waves, more repeated waves. larger spd=slower waves
-void LEDsWavesOfRainbowWSV(int wvs, int spd, int v) {
-  for (int i = 0; i < lct; i++) {
-    LEDsSetLightHSV(i, byte(int(i * wvs / lct + millis() * 10 / spd)), 255, v);
-  }
-}
-
-
-
-/////////////////////////////////////////light setting functions (lower level)
-void LEDsAllOff() {
-  LEDsSetAllRGB(0, 0, 0);
-}
-void LEDsSetAllHSV(int HUE, int SAT, int VAL) {
-  for (int i = 0; i < lct; i++) {
-    LEDsSetLightHSV(i, HUE, SAT, VAL);
-  }
-}
-void LEDsSetLightHSV(int J, int HUE, int SAT, int VAL) {
-  if (J >= 0 && J < lct) {
-    leds[J] = CHSV(HUE, SAT, VAL);
-  }
-}
-void LEDsSetAllRGB(int RED, int GREEN, int BLUE) {
-  for (int i = 0; i < lct; i++) {
-    LEDsSetLightRGB(i, RED, GREEN, BLUE);
-  }
-}
-void LEDsSetLightRGB(int J, int RED, int GREEN, int BLUE) {
-  if (J >= 0 && J < lct) {
-    leds[J] = CRGB(RED, GREEN, BLUE);
-  }
-}
+//////////////////////////////////////////////////pattern functions
+////makes moving waves between two colors. larger W=shorter wave period, larger S=faster movement
+//void LEDscHSVcHSVwavesWS(CHSV A, CHSV B, int W, int S) {
+//  CRGB a;
+//  CRGB b;
+//  hsv2rgb_rainbow(A, a);
+//  hsv2rgb_rainbow(B, b);
+//  unsigned long milli = millis();
+//  for (int i = 0; i < lct; i++) {
+//    byte scaler = sin8(int(milli / S + (i * W * 255 / lct)));
+//    LEDsSetLightRGB(i, map(scaler, 0, 255, 0, a.red) + map(255 - scaler, 0, 255, 0, b.red), map(scaler, 0, 255, 0, a.green) + map(255 - scaler, 0, 255, 0, b.green), map(scaler, 0, 255, 0, a.blue) + map(255 - scaler, 0, 255, 0, b.blue));
+//  }
+//}
+////pulses (period T) a color with hue H and saturation S from value v to V with time period T
+//void LEDsPulseHSvVT(int H, int S, int v, int V, int T) {
+//  unsigned long milli = millis();
+//  if (milli % T < T / 2) {
+//    LEDsSetAllHSV(H, S, constrain(map(milli % T, 0, T / 2, v, V), v, V));
+//  }
+//  if (milli % T >= T / 2) {
+//    LEDsSetAllHSV(H, S, constrain(map(milli % T, T / 2, T, V, v), v, V));
+//  }
+//}
+////makes moving rainbow waves. larger wvs=shorter waves, more repeated waves. larger spd=slower waves
+//void LEDsWavesOfRainbowWSV(int wvs, int spd, int v) {
+//  for (int i = 0; i < lct; i++) {
+//    LEDsSetLightHSV(i, byte(int(i * wvs / lct + millis() * 10 / spd)), 255, v);
+//  }
+//}
+//
+//
+//
+///////////////////////////////////////////light setting functions (lower level)
+//void LEDsAllOff() {
+//  LEDsSetAllRGB(0, 0, 0);
+//}
+//void LEDsSetAllHSV(int HUE, int SAT, int VAL) {
+//  for (int i = 0; i < lct; i++) {
+//    LEDsSetLightHSV(i, HUE, SAT, VAL);
+//  }
+//}
+//void LEDsSetLightHSV(int J, int HUE, int SAT, int VAL) {
+//  if (J >= 0 && J < lct) {
+//    leds[J] = CHSV(HUE, SAT, VAL);
+//  }
+//}
+//void LEDsSetAllRGB(int RED, int GREEN, int BLUE) {
+//  for (int i = 0; i < lct; i++) {
+//    LEDsSetLightRGB(i, RED, GREEN, BLUE);
+//  }
+//}
+//void LEDsSetLightRGB(int J, int RED, int GREEN, int BLUE) {
+//  if (J >= 0 && J < lct) {
+//    leds[J] = CRGB(RED, GREEN, BLUE);
+//  }
+//}

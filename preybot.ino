@@ -103,12 +103,12 @@ void loop() {
     delay(1);
   } else { // enabled
     if (newPulseDataFlag != 255) { // there's been a change to the controls
-//      Serial.print(y);
-//      Serial.print(",");
-//      Serial.print(x);
-//      Serial.print(",");
-//      Serial.print(z);
-//      Serial.println(",");
+      //      Serial.print(y);
+      //      Serial.print(",");
+      //      Serial.print(x);
+      //      Serial.print(",");
+      //      Serial.print(z);
+      //      Serial.println(",");
       //forward:+ right:- CCW:-
       lf.writeMicroseconds(constrain(1500 + (y - 100) * 5 * yPercent / 100 - (x - 100) * 5 * xPercent / 100 - (z - 100) * 5 * zPercent / 100, 1000, 2000));
 

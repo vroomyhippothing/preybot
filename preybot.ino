@@ -110,16 +110,16 @@ void loop() {
       //      Serial.print(z);
       //      Serial.println(",");
       //forward:+ right:- CCW:-
-      lf.writeMicroseconds(constrain(1500 + (y - 100) * 5 * yPercent / 100 - (x - 100) * 5 * xPercent / 100 - (z - 100) * 5 * zPercent / 100, 1000, 2000));
+      lf.writeMicroseconds(constrain(1500 + (y - 100) * 5 * yPercent / 100 - (x - 100) * 5 * xPercent / 100 + (z - 100) * 5 * zPercent / 100, 1000, 2000));
 
       //forward:+ right:+ CCW:+
-      rf.writeMicroseconds(constrain(1500 + (y - 100) * 5 * yPercent / 100 + (x - 100) * 5 * xPercent / 100 + (z - 100) * 5 * zPercent / 100, 1000, 2000));
+      rf.writeMicroseconds(constrain(1500 - (y - 100) * 5 * yPercent / 100 - (x - 100) * 5 * xPercent / 100 + (z - 100) * 5 * zPercent / 100, 1000, 2000));
 
       //forward:+ right:+ CCW:-
-      lb.writeMicroseconds(constrain(1500 + (y - 100) * 5 * yPercent / 100 + (x - 100) * 5 * xPercent / 100 - (z - 100) * 5 * zPercent / 100, 1000, 2000));
+      lb.writeMicroseconds(constrain(1500 + (y - 100) * 5 * yPercent / 100 + (x - 100) * 5 * xPercent / 100 + (z - 100) * 5 * zPercent / 100, 1000, 2000));
 
       //forward:+ right:- CCW:+
-      rb.writeMicroseconds(constrain(1500 + (y - 100) * 5 * yPercent / 100 - (x - 100) * 5 * xPercent / 100 + (z - 100) * 5 * zPercent / 100, 1000, 2000));
+      rb.writeMicroseconds(constrain(1500 - (y - 100) * 5 * yPercent / 100 + (x - 100) * 5 * xPercent / 100 + (z - 100) * 5 * zPercent / 100, 1000, 2000));
     }
     //    Serial.print(lf.readMicroseconds());
     //    Serial.print(",");
